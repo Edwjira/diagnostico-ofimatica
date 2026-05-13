@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Diagnóstico Herramientas Ofimáticas</title>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f2f1; color: #323130; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; }
@@ -92,9 +93,10 @@
   .send-box { border: 1px solid #0078d4; border-radius: 6px; padding: 16px; margin-bottom: 1.25rem; background: #f0f6ff; }
   .send-box h3 { font-size: 14px; font-weight: 600; color: #004578; margin-bottom: 6px; }
   .send-box p  { font-size: 13px; color: #323130; margin-bottom: 14px; line-height: 1.6; }
-  .send-steps  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
-  .send-step   { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #323130; }
-  .send-step-num { background: #0078d4; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .send-status { font-size: 13px; margin-top: 10px; padding: 10px 14px; border-radius: 4px; display: none; line-height: 1.5; }
+  .send-status.sending { background: #dce6f7; color: #0037a0; display: block; }
+  .send-status.ok  { background: #dff6dd; color: #107c10; display: block; }
+  .send-status.err { background: #fde7e9; color: #a4262c; display: block; }
 
   .report-wrap { background: #f3f2f1; border-radius: 6px; padding: 14px 16px; margin-bottom: 1.5rem; }
   .report-wrap h3 { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 10px; }
@@ -201,24 +203,12 @@
 
     <hr class="divider" />
 
-    <!-- CAJA DE ENVÍO CON FORMS -->
+    <!-- CAJA DE ENVÍO EMAILJS -->
     <div class="send-box">
-      <h3>📨 Enviar resultados al docente</h3>
-      <p>Tus resultados ya están listos. Sigue estos dos pasos para que el docente los reciba y tú tengas una copia en tu correo:</p>
-      <div class="send-steps">
-        <div class="send-step">
-          <div class="send-step-num">1</div>
-          <span>Haz clic en el botón de abajo. Se abrirá un formulario de Microsoft con tus datos <strong>ya cargados automáticamente</strong>.</span>
-        </div>
-        <div class="send-step">
-          <div class="send-step-num">2</div>
-          <span>En el formulario, haz clic en el botón <strong>"Enviar"</strong>. ¡Listo! El docente recibirá tu reporte y tú recibirás una copia en tu correo.</span>
-        </div>
-      </div>
-      <div id="status-enviado" class="status-ok">✓ Formulario abierto. Recuerda hacer clic en Enviar dentro del formulario para completar el proceso.</div>
-      <button class="btn primary full" id="btn-abrir-forms" onclick="abrirForms()">
-        Abrir formulario de envío →
-      </button>
+      <h3>📨 Enviar resultados por correo</h3>
+      <p>Al hacer clic en el botón, tus resultados se envían automáticamente a tu correo y al docente. No necesitas hacer nada más.</p>
+      <button class="btn primary full" id="btn-enviar" onclick="enviarCorreos()">Enviar mis resultados →</button>
+      <div id="send-status" class="send-status"></div>
     </div>
 
     <!-- REPORTE COMPLETO -->
@@ -235,9 +225,13 @@
 
 <script>
 /* ═══════════════════════════════════════════════════
-   URL DEL FORMS — ya configurada con tu enlace real
+   CONFIGURACIÓN EMAILJS
    ═══════════════════════════════════════════════════ */
-const FORMS_BASE_URL = "https://forms.cloud.microsoft/r/uKXvapJbzV";
+const EJS_SERVICE = "service_z0klp07";
+const EJS_TPL_DOC = "template_5cvey2t";
+const EJS_TPL_EST = "template_6edl6qq";
+const EJS_PUB_KEY = "aFwCYBUBLaR6sc6cP";
+emailjs.init(EJS_PUB_KEY);
 
 /* ═══════════════════════════════════════════════════
    PREGUNTAS
@@ -533,30 +527,42 @@ function showResults(){
 }
 
 /* ═══════════════════════════════════════════════════
-   ABRIR FORMS PRE-LLENADO
+   ENVÍO CON EMAILJS
    ═══════════════════════════════════════════════════ */
-function abrirForms(){
+async function enviarCorreos(){
+  const btn = $('btn-enviar');
+  const status = $('send-status');
   const d = window._data;
-  // Construir URL con parámetros pre-llenados
-  // Microsoft Forms acepta ?r= con JSON en base64 para pre-llenar
-  // Usamos el método de prefill query string estándar de Forms
-  const params = new URLSearchParams({
-    r: JSON.stringify({
-      nome:             d.nombre,
-      correoEstudiante: d.correoEstudiante,
-      nivelGlobal:      d.nivelGlobal,
-      fecha:            d.fecha,
-      reporte:          d.reporte
-    })
-  });
-  // URL con pre-llenado embebido como fragmento (método compatible con Forms)
-  const url = FORMS_BASE_URL + '?' + params.toString();
-  window.open(url, '_blank');
-  // Mostrar confirmación
-  const s=$('status-enviado');
-  s.classList.add('show');
-  $('btn-abrir-forms').textContent='✓ Formulario abierto — abre la pestaña y haz clic en Enviar';
-  $('btn-abrir-forms').disabled=true;
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  status.className = 'send-status sending';
+  status.textContent = '⏳ Enviando resultados, por favor espera...';
+
+  const params = {
+    nombre:           d.nombre,
+    correoEstudiante: d.correoEstudiante,
+    nivelGlobal:      d.nivelGlobal,
+    fecha:            d.fecha,
+    reporte:          d.reporte,
+  };
+
+  try {
+    // Correo al docente
+    await emailjs.send(EJS_SERVICE, EJS_TPL_DOC, params);
+    // Correo al estudiante
+    await emailjs.send(EJS_SERVICE, EJS_TPL_EST, params);
+
+    btn.textContent = '✓ Resultados enviados';
+    status.className = 'send-status ok';
+    status.textContent = '✓ Listo. Revisa tu correo (' + d.correoEstudiante + '). En unos segundos llegará tu reporte. Si no aparece, revisa la carpeta de spam.';
+  } catch(err) {
+    btn.disabled = false;
+    btn.textContent = 'Reintentar envío';
+    status.className = 'send-status err';
+    status.textContent = '⚠️ Ocurrió un error al enviar. Verifica tu conexión a internet y vuelve a intentarlo. Si el problema persiste, copia el reporte manualmente.';
+    console.error('EmailJS error:', err);
+  }
 }
 
 /* ═══════════════════════════════════════════════════
