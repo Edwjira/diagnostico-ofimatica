@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Diagnóstico Herramientas Ofimáticas</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f3f2f1; color: #323130; min-height: 100vh; display: flex; justify-content: center; padding: 2rem 1rem; }
+  .container { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.10); max-width: 660px; width: 100%; padding: 2rem 2rem 2.5rem; }
+
+  .logo-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.75rem; padding-bottom: 1rem; border-bottom: 1px solid #edebe9; }
+  .logo-bar-text { font-size: 13px; color: #605e5c; line-height: 1.3; }
+  .logo-bar-text strong { display: block; color: #323130; font-size: 14px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .intro-title { font-size: 22px; font-weight: 600; color: #323130; margin-bottom: 8px; }
+  .intro-sub { font-size: 14px; color: #605e5c; line-height: 1.7; margin-bottom: 1.5rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1.5rem; }
+  .chip { background: #f3f2f1; border: 1px solid #edebe9; border-radius: 99px; padding: 4px 14px; font-size: 12px; color: #605e5c; }
+
+  .field-label { font-size: 13px; color: #323130; font-weight: 600; margin-bottom: 4px; display: block; }
+  .field-hint  { font-size: 12px; color: #a19f9d; margin-bottom: 6px; display: block; }
+  .field-input { width: 100%; padding: 9px 12px; border: 1px solid #8a8886; border-radius: 4px; font-size: 14px; color: #323130; background: #fff; margin-bottom: 1.25rem; font-family: inherit; }
+  .field-input:focus { outline: none; border-color: #0078d4; box-shadow: 0 0 0 1px #0078d4; }
+
+  .prog-wrap { margin-bottom: 1.5rem; }
+  .prog-label { display: flex; justify-content: space-between; font-size: 12px; color: #605e5c; margin-bottom: 5px; }
+  .prog-outer { background: #edebe9; border-radius: 99px; height: 5px; }
+  .prog-inner { background: #0078d4; height: 5px; border-radius: 99px; transition: width 0.3s; }
+
+  .q-module { font-size: 11px; font-weight: 700; color: #0078d4; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .q-text   { font-size: 16px; color: #323130; line-height: 1.5; margin-bottom: 1.1rem; font-weight: 500; }
+
+  .task-box { background: #f0f6ff; border-left: 3px solid #0078d4; padding: 12px 14px; border-radius: 0 4px 4px 0; margin-bottom: 1.1rem; }
+  .task-box .task-label { font-size: 11px; font-weight: 700; color: #0078d4; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+  .task-box p { font-size: 14px; color: #323130; line-height: 1.6; }
+
+  .options { display: flex; flex-direction: column; gap: 9px; margin-bottom: 1.5rem; }
+  .opt-btn { background: #fff; border: 1px solid #8a8886; border-radius: 4px; padding: 11px 14px; text-align: left; font-size: 14px; color: #323130; cursor: pointer; transition: all 0.12s; font-family: inherit; line-height: 1.4; }
+  .opt-btn:hover   { background: #f3f2f1; border-color: #0078d4; }
+  .opt-btn.selected { background: #e1effa; border-color: #0078d4; color: #004578; font-weight: 500; }
+
+  .nav-row  { display: flex; justify-content: space-between; align-items: center; }
+  .q-counter { font-size: 12px; color: #a19f9d; }
+
+  .btn { padding: 9px 22px; border-radius: 4px; border: 1px solid #8a8886; background: #fff; color: #323130; font-size: 14px; cursor: pointer; font-family: inherit; transition: all 0.12s; }
+  .btn:hover          { background: #f3f2f1; }
+  .btn.primary        { background: #0078d4; color: #fff; border-color: #0078d4; }
+  .btn.primary:hover  { background: #106ebe; }
+  .btn:disabled       { opacity: 0.4; cursor: not-allowed; }
+  .btn.full           { width: 100%; margin-bottom: 10px; }
+  .btn.outline        { background: #fff; color: #0078d4; border-color: #0078d4; }
+  .btn.outline:hover  { background: #e1effa; }
+  .btn.ghost          { background: transparent; border-color: #edebe9; color: #605e5c; }
+  .btn.ghost:hover    { background: #f3f2f1; }
+
+  /* RESULTADO */
+  .result-header { text-align: center; padding: 1rem 0 1.5rem; }
+  .level-badge { display: inline-block; padding: 5px 18px; border-radius: 99px; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 10px; }
+  .badge-nulo       { background: #fde7e9; color: #a4262c; }
+  .badge-basico     { background: #fff4ce; color: #8a5700; }
+  .badge-intermedio { background: #dce6f7; color: #0037a0; }
+  .badge-avanzado   { background: #dff6dd; color: #107c10; }
+
+  .result-name { font-size: 22px; font-weight: 600; color: #323130; margin-bottom: 6px; }
+  .result-desc { font-size: 14px; color: #605e5c; line-height: 1.6; max-width: 460px; margin: 0 auto 1.5rem; }
+
+  .section-title { font-size: 14px; font-weight: 600; color: #323130; margin-bottom: 12px; }
+
+  .modules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1.75rem; }
+  .mod-card     { border: 1px solid #edebe9; border-radius: 6px; padding: 12px 14px; background: #faf9f8; }
+  .mod-name     { font-size: 11px; color: #a19f9d; margin-bottom: 4px; }
+  .mod-level    { font-size: 14px; font-weight: 600; margin-bottom: 7px; }
+  .lv-nulo      { color: #a4262c; } .lv-basico { color: #8a5700; }
+  .lv-intermedio{ color: #0037a0; } .lv-avanzado { color: #107c10; }
+  .bar-outer { background: #edebe9; border-radius: 99px; height: 4px; }
+  .bar-inner { height: 4px; border-radius: 99px; }
+  .bar-nulo      { background: #d13438; } .bar-basico  { background: #c19c00; }
+  .bar-intermedio{ background: #0078d4; } .bar-avanzado{ background: #107c10; }
+
+  .recs-list { margin-bottom: 1.75rem; }
+  .rec-item  { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f3f2f1; }
+  .rec-item:last-child { border-bottom: none; }
+  .rec-icon  { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .rec-body  { font-size: 13px; color: #605e5c; line-height: 1.6; }
+  .rec-body strong { display: block; color: #323130; font-size: 13px; margin-bottom: 2px; }
+
+  /* CAJA DE ENVÍO */
+  .send-box { border: 1px solid #0078d4; border-radius: 6px; padding: 16px; margin-bottom: 1.25rem; background: #f0f6ff; }
+  .send-box h3 { font-size: 14px; font-weight: 600; color: #004578; margin-bottom: 6px; }
+  .send-box p  { font-size: 13px; color: #323130; margin-bottom: 14px; line-height: 1.6; }
+  .send-steps  { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .send-step   { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; color: #323130; }
+  .send-step-num { background: #0078d4; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+  .report-wrap { background: #f3f2f1; border-radius: 6px; padding: 14px 16px; margin-bottom: 1.5rem; }
+  .report-wrap h3 { font-size: 13px; font-weight: 600; color: #323130; margin-bottom: 10px; }
+  .report-pre { font-size: 12px; color: #323130; font-family: 'Cascadia Code', Consolas, monospace; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+
+  .divider { border: none; border-top: 1px solid #edebe9; margin: 1.5rem 0; }
+
+  .status-ok  { background: #dff6dd; color: #107c10; border-radius: 4px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; display: none; }
+  .status-ok.show { display: block; }
+
+  @media (max-width: 480px) {
+    .container { padding: 1.25rem 1rem 2rem; }
+    .modules-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- LOGO BAR -->
+  <div class="logo-bar">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Monitor -->
+      <rect x="3" y="4" width="26" height="17" rx="2.5" fill="#0078d4"/>
+      <rect x="5" y="6" width="22" height="13" rx="1.5" fill="#e1effa"/>
+      <!-- Código en pantalla -->
+      <rect x="7" y="9" width="6" height="1.5" rx="0.75" fill="#0078d4" opacity="0.7"/>
+      <rect x="7" y="12" width="10" height="1.5" rx="0.75" fill="#0078d4" opacity="0.5"/>
+      <rect x="7" y="15" width="8" height="1.5" rx="0.75" fill="#0078d4" opacity="0.5"/>
+      <!-- Cursor / flecha -->
+      <polygon points="16,9 20,13 17.5,13 16.5,16 15,13 13,13" fill="#106ebe"/>
+      <!-- Base del monitor -->
+      <rect x="13" y="21" width="6" height="2.5" rx="1" fill="#0078d4" opacity="0.6"/>
+      <rect x="10" y="23.5" width="12" height="2" rx="1" fill="#0078d4" opacity="0.5"/>
+      <!-- Engrane / herramienta pequeña -->
+      <circle cx="26" cy="25" r="4" fill="#0078d4"/>
+      <circle cx="26" cy="25" r="2" fill="#e1effa"/>
+      <rect x="25.2" y="21.5" width="1.6" height="1.5" rx="0.5" fill="#0078d4"/>
+      <rect x="25.2" y="27" width="1.6" height="1.5" rx="0.5" fill="#0078d4"/>
+      <rect x="22.5" y="24.2" width="1.5" height="1.6" rx="0.5" fill="#0078d4"/>
+      <rect x="28" y="24.2" width="1.5" height="1.6" rx="0.5" fill="#0078d4"/>
+    </svg>
+    <div class="logo-bar-text">
+      <strong>Programas Técnicos Laborales</strong>
+      Diagnóstico de Herramientas Ofimáticas
+    </div>
+  </div>
+
+  <!-- ═══════════════ PANTALLA INICIO ═══════════════ -->
+  <div class="screen active" id="screen-intro">
+    <div class="intro-title">¿En qué nivel estás?</div>
+    <div class="intro-sub">Este diagnóstico identifica tu nivel de manejo de herramientas digitales para el trabajo en 6 módulos. Responde con honestidad — no hay respuestas correctas o incorrectas. Al finalizar recibirás tus resultados y recomendaciones por correo.</div>
+    <div class="chips">
+      <span class="chip">📧 Correo</span>
+      <span class="chip">☁️ Nube</span>
+      <span class="chip">📝 Word</span>
+      <span class="chip">📊 PowerPoint</span>
+      <span class="chip">📈 Excel</span>
+      <span class="chip">🤖 IA</span>
+    </div>
+    <label class="field-label" for="inp-name">Nombre completo</label>
+    <input class="field-input" id="inp-name" type="text" placeholder="Ej: María González Pérez" autocomplete="name" />
+    <label class="field-label" for="inp-email">Correo institucional</label>
+    <span class="field-hint">Aquí recibirás tus resultados al finalizar</span>
+    <input class="field-input" id="inp-email" type="email" placeholder="estudiante@institucion.edu.co" autocomplete="email" />
+    <div id="intro-error" style="font-size:13px;color:#a4262c;margin-bottom:10px;display:none;">
+      Por favor completa tu nombre y correo antes de continuar.
+    </div>
+    <button class="btn primary full" onclick="startQuiz()">Iniciar diagnóstico →</button>
+  </div>
+
+  <!-- ═══════════════ PANTALLA PREGUNTA ═══════════════ -->
+  <div class="screen" id="screen-question">
+    <div class="prog-wrap">
+      <div class="prog-label">
+        <span id="q-module-top"></span>
+        <span id="q-pct"></span>
+      </div>
+      <div class="prog-outer"><div class="prog-inner" id="prog-inner" style="width:0%"></div></div>
+    </div>
+    <div class="q-module" id="q-module"></div>
+    <div class="q-text"   id="q-text"></div>
+    <div id="q-task-wrap" style="display:none" class="task-box">
+      <div class="task-label">Situación práctica</div>
+      <p id="q-task-text"></p>
+    </div>
+    <div class="options" id="q-options"></div>
+    <div class="nav-row">
+      <span class="q-counter" id="q-pos"></span>
+      <button class="btn primary" id="btn-next" onclick="nextQ()" disabled>Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ PANTALLA RESULTADO ═══════════════ -->
+  <div class="screen" id="screen-result">
+
+    <div id="result-top"></div>
+
+    <div class="section-title">Resultado por módulo</div>
+    <div class="modules-grid" id="modules-grid"></div>
+
+    <div class="section-title">Recomendaciones personalizadas</div>
+    <div class="recs-list" id="recs-list"></div>
+
+    <hr class="divider" />
+
+    <!-- CAJA DE ENVÍO CON FORMS -->
+    <div class="send-box">
+      <h3>📨 Enviar resultados al docente</h3>
+      <p>Tus resultados ya están listos. Sigue estos dos pasos para que el docente los reciba y tú tengas una copia en tu correo:</p>
+      <div class="send-steps">
+        <div class="send-step">
+          <div class="send-step-num">1</div>
+          <span>Haz clic en el botón de abajo. Se abrirá un formulario de Microsoft con tus datos <strong>ya cargados automáticamente</strong>.</span>
+        </div>
+        <div class="send-step">
+          <div class="send-step-num">2</div>
+          <span>En el formulario, haz clic en el botón <strong>"Enviar"</strong>. ¡Listo! El docente recibirá tu reporte y tú recibirás una copia en tu correo.</span>
+        </div>
+      </div>
+      <div id="status-enviado" class="status-ok">✓ Formulario abierto. Recuerda hacer clic en Enviar dentro del formulario para completar el proceso.</div>
+      <button class="btn primary full" id="btn-abrir-forms" onclick="abrirForms()">
+        Abrir formulario de envío →
+      </button>
+    </div>
+
+    <!-- REPORTE COMPLETO -->
+    <div class="report-wrap">
+      <h3>📄 Tu reporte completo</h3>
+      <div class="report-pre" id="report-pre"></div>
+    </div>
+    <button class="btn outline full" onclick="copyReport()">Copiar reporte</button>
+    <button class="btn ghost full" onclick="restart()">Nuevo diagnóstico</button>
+
+  </div><!-- /screen-result -->
+
+</div><!-- /container -->
+
+<script>
+/* ═══════════════════════════════════════════════════
+   URL DEL FORMS — ya configurada con tu enlace real
+   ═══════════════════════════════════════════════════ */
+const FORMS_BASE_URL = "https://forms.cloud.microsoft/r/uKXvapJbzV";
+
+/* ═══════════════════════════════════════════════════
+   PREGUNTAS
+   ═══════════════════════════════════════════════════ */
+const QUESTIONS = [
+  {id:'c1',mod:'Correo electrónico',type:'single',
+   text:'¿Con qué frecuencia usas el correo electrónico?',
+   opts:['Nunca lo he usado','Lo uso ocasionalmente para cosas personales','Lo uso regularmente en trabajo o estudio','Lo uso a diario con múltiples cuentas y herramientas']},
+  {id:'c2',mod:'Correo electrónico',type:'single',
+   text:'Cuando escribes un correo a tu jefe o a un cliente, ¿cómo lo redactas?',
+   opts:['No sabría cómo empezar','Lo escribo de manera informal como un mensaje de texto','Uso un saludo, un cuerpo claro y una despedida','Adapto el tono, uso asunto descriptivo, adjuntos nombrados y firma corporativa']},
+  {id:'c3',mod:'Correo electrónico',type:'single',
+   text:'¿Sabes qué significa el campo CC y el campo CCO en un correo?',
+   opts:['No sé qué son esos campos','Sé que existen pero no entiendo bien para qué sirven','Conozco CC (copia) pero no CCO','Sé usar ambos correctamente y entiendo la diferencia']},
+  {id:'c4',mod:'Correo electrónico',type:'task',
+   text:'¿Cuál sería la forma correcta de hacer esto?',
+   task:'Tu jefa te pide reenviar el informe mensual a tres clientes externos sin que ellos vean las direcciones de correo de los demás.',
+   opts:['No sé cómo hacerlo','Los añado en el campo Para con sus correos separados por coma','Los añado en CC para que reciban copia','Los añado en CCO (copia oculta) para proteger sus datos']},
+  {id:'c5',mod:'Correo electrónico',type:'task',
+   text:'¿Cuál sería la respuesta más apropiada?',
+   task:'Recibes un correo urgente de un proveedor externo preguntando por una cotización. Tu jefe no está disponible.',
+   opts:['Espero a que regrese mi jefe antes de responder','Respondo informalmente diciendo que mi jefe está ocupado','Envío una respuesta profesional indicando que daremos respuesta en 24 horas','Reenvío el correo a mi jefe sin ningún comentario']},
+  {id:'c6',mod:'Correo electrónico',type:'task',
+   text:'¿Cómo organizas tu bandeja si recibes más de 50 correos diarios?',
+   task:'Imagina que eres asistente administrativo de una empresa con alto volumen de comunicaciones.',
+   opts:['No tengo ninguna estrategia','Borro los que no me interesan','Creo carpetas por tema, remitente o prioridad y uso filtros automáticos','Uso todas las funciones avanzadas: reglas, etiquetas, bandeja prioritaria y respuestas automáticas']},
+
+  {id:'n1',mod:'Nube y almacenamiento',type:'single',
+   text:'¿Has guardado archivos en OneDrive, Google Drive o Dropbox?',
+   opts:['Nunca he usado ninguno','He escuchado de ellos pero no sé cómo usarlos','Los uso para guardar archivos personales','Los uso a diario y sé gestionar carpetas, permisos y versiones']},
+  {id:'n2',mod:'Nube y almacenamiento',type:'single',
+   text:'¿Sabes la diferencia entre compartir un archivo y adjuntarlo en un correo?',
+   opts:['No veo ninguna diferencia','Creo que es lo mismo pero en distintos servicios','Sé que compartir da acceso a la nube y adjuntar envía una copia','Entiendo las ventajas de cada opción y cuándo usar cada una en contexto laboral']},
+  {id:'n3',mod:'Nube y almacenamiento',type:'task',
+   text:'¿Qué harías en esta situación?',
+   task:'Tu coordinador te pide compartir una carpeta con los contratos del mes para que tres colegas puedan editarla en tiempo real.',
+   opts:['Les envío todos los archivos adjuntos por correo','Subo los archivos y les envío el enlace sin configurar permisos','Comparto la carpeta con permisos de edición solo para esas tres personas','Comparto con permisos de edición, organizo los archivos con nombres claros y verifico el acceso']},
+  {id:'n4',mod:'Nube y almacenamiento',type:'single',
+   text:'¿Qué es el historial de versiones de un documento en la nube?',
+   opts:['No sé qué es','Es cuando el archivo tiene varios nombres','Es la función que permite ver y recuperar versiones anteriores del documento','Es una función que uso regularmente para restaurar cambios no deseados']},
+  {id:'n5',mod:'Nube y almacenamiento',type:'task',
+   text:'¿Cuál es la práctica más apropiada?',
+   task:'Vas a guardar el acta de una reunión del 15 de mayo de 2025 en la carpeta compartida del equipo.',
+   opts:['La guardo como acta.docx','La guardo como reunion.docx','La guardo como Acta_reunion_15mayo2025.docx','La guardo como 2025-05-15_Acta_reunion_equipo_v1.docx en la carpeta correcta']},
+
+  {id:'w1',mod:'Word (procesador de texto)',type:'single',
+   text:'¿Qué tipos de documentos has creado en Word?',
+   opts:['Nunca he usado Word','Solo texto simple sin formato','Cartas, trabajos y documentos con formato básico','Informes complejos con estilos, tabla de contenido, encabezados y pie de página']},
+  {id:'w2',mod:'Word (procesador de texto)',type:'single',
+   text:'¿Qué son los estilos en Word?',
+   opts:['No sé qué son','Son los tipos de letra disponibles','Son formatos predefinidos para títulos y párrafos','Los uso para estructurar documentos y generar tablas de contenido automáticas']},
+  {id:'w3',mod:'Word (procesador de texto)',type:'task',
+   text:'¿Cuál es la forma correcta de resolver esto?',
+   task:'Tu jefa te pide elaborar una carta formal para un cliente comunicando el cambio de tarifas.',
+   opts:['No sé cómo hacer una carta formal','Escribo el texto sin ninguna estructura','Redacto con membrete, fecha, destinatario, saludo, cuerpo y firma','Uso plantilla corporativa, aplico estilos y reviso ortografía y tono']},
+  {id:'w4',mod:'Word (procesador de texto)',type:'task',
+   text:'¿Qué herramienta usarías?',
+   task:'Debes enviar una circular de cobro a 200 clientes. Cada carta debe tener el nombre y la deuda de cada cliente personalizada.',
+   opts:['Escribo cada carta por separado','Hago una carta genérica y cambio el nombre manualmente','Uso una plantilla pero no sé cómo personalizar','Uso combinación de correspondencia de Word con base de datos de Excel']},
+  {id:'w5',mod:'Word (procesador de texto)',type:'single',
+   text:'¿Has usado el control de cambios en Word para documentos colaborativos?',
+   opts:['Nunca','He visto esa opción pero no la uso','La conozco y la he usado ocasionalmente','La uso habitualmente al colaborar en documentos de trabajo']},
+  {id:'w6',mod:'Word (procesador de texto)',type:'task',
+   text:'¿Cómo lo harías?',
+   task:'Tu jefe entrega un informe de 30 páginas y necesita al inicio una tabla de contenido con títulos y números de página correctos.',
+   opts:['No sé cómo hacer una tabla de contenido','La escribo manualmente revisando página por página','Inserto tabla de contenido automática desde el menú Referencias','Aplico estilos de título a todas las secciones y luego inserto y actualizo la tabla automática']},
+
+  {id:'p1',mod:'PowerPoint (presentaciones)',type:'single',
+   text:'¿Has creado presentaciones en PowerPoint?',
+   opts:['Nunca','Presentaciones básicas con texto e imagen','Presentaciones con diseño organizado, gráficas y animaciones','Presentaciones ejecutivas con estructura narrativa, identidad visual y datos claros']},
+  {id:'p2',mod:'PowerPoint (presentaciones)',type:'task',
+   text:'¿Cuál sería el mejor enfoque?',
+   task:'Debes preparar una presentación de 10 diapositivas para que el gerente muestre resultados ante la junta directiva.',
+   opts:['No sabría cómo estructurarla','Pongo toda la información con mucho texto','Uso una diapositiva por tema, gráficas simples y poco texto','Diseño con identidad corporativa, datos en gráficas y notas del orador']},
+  {id:'p3',mod:'PowerPoint (presentaciones)',type:'single',
+   text:'¿Qué es una plantilla o tema en PowerPoint?',
+   opts:['No sé qué es','Es el fondo de color que elijo','Es un diseño predefinido con colores y fuentes para todas las diapositivas','Lo uso y sé cómo personalizarlo con los colores corporativos']},
+  {id:'p4',mod:'PowerPoint (presentaciones)',type:'task',
+   text:'¿Qué harías en esta situación?',
+   task:'Un colega te dice que tu presentación tiene demasiado texto. Tienes 30 minutos para mejorarla.',
+   opts:['No sabría qué cambiar','Reduzco el tamaño de letra para que quepa más','Elimino texto secundario y lo muevo a las notas del orador','Reestructuro: una idea por slide, reemplazo texto con gráficos y aumento la letra']},
+  {id:'p5',mod:'PowerPoint (presentaciones)',type:'single',
+   text:'¿Has usado gráficas en PowerPoint vinculadas a Excel?',
+   opts:['No','He insertado imágenes de gráficas','He insertado gráficas simples en PowerPoint','Inserto gráficas vinculadas a Excel para que se actualicen automáticamente']},
+
+  {id:'e1',mod:'Excel (hoja de cálculo)',type:'single',
+   text:'¿Cuál es tu nivel actual con Excel?',
+   opts:['Nunca lo he usado','Sé abrirlo y escribir datos en celdas','Sé hacer sumas básicas, formato y tablas simples','Manejo fórmulas avanzadas, tablas dinámicas, gráficas y funciones de búsqueda']},
+  {id:'e2',mod:'Excel (hoja de cálculo)',type:'task',
+   text:'¿Cómo resolverías esto?',
+   task:'Te entregan una lista de 300 clientes en Excel. Necesitas saber cuántos pertenecen a Bogotá.',
+   opts:['Lo cuento manualmente','No sé cómo hacerlo en Excel','Uso filtros para ver los de Bogotá y cuento visualmente','Uso la función CONTAR.SI para obtener el número automáticamente']},
+  {id:'e3',mod:'Excel (hoja de cálculo)',type:'task',
+   text:'¿Cuál sería tu proceso?',
+   task:'Tienes una tabla con gastos del mes por categoría. Tu jefe pide un resumen de cuánto se gastó en cada una.',
+   opts:['Los sumo con calculadora','Escribo sumas manualmente celda por celda','Uso SUMA por cada categoría con fórmulas básicas','Uso una tabla dinámica para resumir y analizar de forma rápida']},
+  {id:'e4',mod:'Excel (hoja de cálculo)',type:'single',
+   text:'¿Sabes qué hace la función BUSCARV (o XLOOKUP) en Excel?',
+   opts:['No la conozco','He escuchado el nombre pero no sé para qué sirve','Sé que busca un valor y trae información relacionada de una tabla','La uso regularmente para cruzar bases de datos']},
+  {id:'e5',mod:'Excel (hoja de cálculo)',type:'task',
+   text:'¿Qué harías en esta situación?',
+   task:'Tu jefe quiere que los valores de venta por debajo de la meta se vean en rojo automáticamente.',
+   opts:['Los coloreo manualmente','No sé cómo hacerlo','Lo he escuchado pero no sé cómo aplicarlo','Uso formato condicional para que las celdas cambien de color automáticamente']},
+  {id:'e6',mod:'Excel (hoja de cálculo)',type:'task',
+   text:'¿Qué harías?',
+   task:'Debes crear un inventario de suministros de oficina que muestre cuáles están por debajo del stock mínimo.',
+   opts:['Lo hago en papel o en Word','Hago una lista en Excel sin lógica adicional','Hago una tabla con columnas de cantidad y mínimo','Diseño la tabla con formato condicional, fórmulas de faltantes y alertas']},
+  {id:'e7',mod:'Excel (hoja de cálculo)',type:'single',
+   text:'¿Has creado gráficas en Excel para presentar datos?',
+   opts:['Nunca','He visto cómo se hace pero no lo he hecho','He creado gráficas básicas de barras o líneas','Sé elegir el tipo de gráfica según los datos y personalizarla profesionalmente']},
+
+  {id:'ia1',mod:'Inteligencia Artificial (IA)',type:'single',
+   text:'¿Has usado herramientas de IA como Copilot, ChatGPT, Gemini u otras?',
+   opts:['Nunca he escuchado de esas herramientas','He escuchado pero nunca las he usado','Las he probado un par de veces por curiosidad','Las uso regularmente como apoyo en mi trabajo o estudio']},
+  {id:'ia2',mod:'Inteligencia Artificial (IA)',type:'task',
+   text:'¿Cuál sería el mejor uso?',
+   task:'Debes redactar un correo para informar a los clientes sobre un cambio en el horario de atención.',
+   opts:['No uso ninguna herramienta, lo intento solo','Busco en Google una plantilla de correo','Le pido a la IA que lo escriba completo y lo envío tal cual','Le pido a la IA un borrador, lo reviso, ajusto el tono y los datos, y luego lo envío']},
+  {id:'ia3',mod:'Inteligencia Artificial (IA)',type:'single',
+   text:'¿Qué tan consciente eres de que la IA puede cometer errores o inventar información?',
+   opts:['No lo sabía','Lo había escuchado pero no lo tengo muy en cuenta','Lo sé y siempre reviso lo que produce antes de usarlo','Verifico siempre los datos, fechas y fuentes que genera la IA antes de usar cualquier resultado']},
+  {id:'ia4',mod:'Inteligencia Artificial (IA)',type:'task',
+   text:'¿Qué harías?',
+   task:'Tu jefe te pide resumir un informe de 15 páginas en un párrafo ejecutivo para una reunión en dos horas.',
+   opts:['Lo leo completo y trato de resumirlo a mano','Copio partes del informe sin resumir realmente','Uso IA para que lo resuma y lo entrego sin revisar','Uso la IA para generar un borrador, lo reviso con el original y ajusto antes de entregar']},
+  {id:'ia5',mod:'Inteligencia Artificial (IA)',type:'single',
+   text:'¿Sabes qué es un prompt en el contexto de la inteligencia artificial?',
+   opts:['No sé qué es un prompt','He escuchado el término pero no entiendo bien qué es','Es la instrucción o pregunta que le doy a la IA para obtener un resultado','Sé construir prompts claros y específicos para obtener mejores resultados']},
+];
+
+const MODULE_IDS = {
+  'Correo electrónico':        ['c1','c2','c3','c4','c5','c6'],
+  'Nube y almacenamiento':     ['n1','n2','n3','n4','n5'],
+  'Word (procesador de texto)':['w1','w2','w3','w4','w5','w6'],
+  'PowerPoint (presentaciones)':['p1','p2','p3','p4','p5'],
+  'Excel (hoja de cálculo)':   ['e1','e2','e3','e4','e5','e6','e7'],
+  'Inteligencia Artificial (IA)':['ia1','ia2','ia3','ia4','ia5'],
+};
+
+const RECS = {
+  'Correo electrónico':{
+    'Nulo':'Empieza por crear y configurar una cuenta de correo. Practica enviar, responder y reenviar mensajes básicos antes de avanzar al uso corporativo.',
+    'Básico':'Enfócate en redacción formal: aprende a escribir correos con asunto claro, saludo, cuerpo y firma profesional. Practica el uso correcto de CC y CCO.',
+    'Intermedio':'Profundiza en gestión de bandeja de entrada: filtros, reglas automáticas y plantillas de respuesta. Refuerza el protocolo empresarial de comunicación.',
+    'Avanzado':'Puedes apoyar a compañeros. Enfócate en flujos de comunicación complejos y manejo de cuentas corporativas con herramientas integradas.',
+  },
+  'Nube y almacenamiento':{
+    'Nulo':'Comienza por conocer qué es la nube. Practica crear una cuenta en OneDrive y subir tu primer archivo. Familiarízate con la interfaz de Microsoft 365.',
+    'Básico':'Aprende a organizar carpetas, nombrar archivos correctamente y compartir documentos con los permisos adecuados según el destinatario.',
+    'Intermedio':'Profundiza en colaboración en tiempo real, historial de versiones y configuración de permisos según el nivel de confidencialidad de la información.',
+    'Avanzado':'Explora automatizaciones con Power Automate, integración con Teams y buenas prácticas de seguridad y gestión documental empresarial.',
+  },
+  'Word (procesador de texto)':{
+    'Nulo':'Inicia con los documentos más comunes: carta simple y memorando. Aprende a escribir, guardar, imprimir y dar formato básico en Word.',
+    'Básico':'Aprende a aplicar formatos: fuentes, párrafos, alineación. Practica redactar documentos laborales reales con estructura correcta.',
+    'Intermedio':'Trabaja estilos, encabezados automáticos, tabla de contenido y combinación de correspondencia. Son competencias clave para el trabajo administrativo.',
+    'Avanzado':'Refuerza documentos complejos: plantillas corporativas, formularios protegidos y macros básicas. Puedes co-liderar este módulo en clase.',
+  },
+  'PowerPoint (presentaciones)':{
+    'Nulo':'Empieza por crear una presentación simple con texto e imágenes. Aprende a agregar diapositivas, cambiar el diseño y guardar.',
+    'Básico':'Practica la estructura de una presentación ejecutiva: pocos puntos por slide, gráficas simples y diseño visual consistente.',
+    'Intermedio':'Profundiza en diseño visual: plantillas corporativas, gráficas vinculadas a Excel, animaciones funcionales y notas del orador.',
+    'Avanzado':'Enfócate en comunicación visual avanzada. Puedes apoyar a compañeros en el diseño de sus presentaciones profesionales.',
+  },
+  'Excel (hoja de cálculo)':{
+    'Nulo':'Empieza desde cero: conoce la estructura de Excel. Practica suma básica, formato de tabla y guardar archivos. Es la herramienta más importante del programa.',
+    'Básico':'Aprende fórmulas esenciales: SUMA, PROMEDIO, SI, CONTAR.SI. Practica organizar datos en tablas limpias y con formato profesional.',
+    'Intermedio':'Refuerza BUSCARV/XLOOKUP, formato condicional, gráficas y filtros avanzados. Son las herramientas más demandadas en trabajo administrativo.',
+    'Avanzado':'Explora tablas dinámicas avanzadas, consolidación de datos y automatización básica. Puedes liderar proyectos de análisis en el aula.',
+  },
+  'Inteligencia Artificial (IA)':{
+    'Nulo':'Descubre qué es la IA generativa. Prueba Microsoft Copilot con preguntas simples de tu trabajo y observa cómo responde.',
+    'Básico':'Aprende a construir instrucciones (prompts) claras. Practica pedir borradores de correos, resúmenes y listas con herramientas de IA.',
+    'Intermedio':'Profundiza en pensamiento crítico: verificar datos de la IA, ajustar resultados y entender cuándo usarla y cuándo no.',
+    'Avanzado':'Explora Copilot integrado en Word, Excel y Outlook. Aprende a construir prompts especializados para tareas administrativas complejas.',
+  },
+};
+
+/* ═══════════════════════════════════════════════════
+   ESTADO
+   ═══════════════════════════════════════════════════ */
+let currentQ = 0, answers = {}, studentName = '', studentEmail = '', reportText = '';
+
+/* ═══════════════════════════════════════════════════
+   UTILIDADES
+   ═══════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+function showScreen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); $(id).classList.add('active'); }
+function levelFromScore(s){ if(s<0.75)return{key:'nulo',label:'Nulo',pct:8}; if(s<1.5)return{key:'basico',label:'Básico',pct:35}; if(s<2.25)return{key:'intermedio',label:'Intermedio',pct:65}; return{key:'avanzado',label:'Avanzado',pct:95}; }
+function scoreModule(ids){ let t=0,c=0; ids.forEach(id=>{ if(answers[id]!==undefined){t+=answers[id];c++;} }); return c?t/c:0; }
+
+/* ═══════════════════════════════════════════════════
+   INICIO
+   ═══════════════════════════════════════════════════ */
+function startQuiz(){
+  const n=$('inp-name').value.trim(), e=$('inp-email').value.trim();
+  if(!n || !e || !e.includes('@')){ $('intro-error').style.display='block'; return; }
+  $('intro-error').style.display='none';
+  studentName=n; studentEmail=e; currentQ=0; answers={};
+  showScreen('screen-question'); renderQ();
+}
+
+/* ═══════════════════════════════════════════════════
+   RENDERIZAR PREGUNTA
+   ═══════════════════════════════════════════════════ */
+function renderQ(){
+  const q=QUESTIONS[currentQ];
+  const pct=Math.round((currentQ/QUESTIONS.length)*100);
+  $('prog-inner').style.width=pct+'%';
+  $('q-module-top').textContent=q.mod;
+  $('q-module').textContent=q.mod;
+  $('q-text').textContent=q.text;
+  $('q-pos').textContent=(currentQ+1)+' de '+QUESTIONS.length;
+  $('q-pct').textContent=pct+'%';
+  const tw=$('q-task-wrap');
+  if(q.task){ tw.style.display='block'; $('q-task-text').textContent=q.task; }
+  else { tw.style.display='none'; }
+  const opts=$('q-options'); opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn'; btn.textContent=o;
+    if(answers[q.id]===i) btn.classList.add('selected');
+    btn.onclick=()=>{
+      opts.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected'); answers[q.id]=i; $('btn-next').disabled=false;
+    };
+    opts.appendChild(btn);
+  });
+  $('btn-next').disabled=answers[q.id]===undefined;
+}
+
+function nextQ(){
+  if(answers[QUESTIONS[currentQ].id]===undefined) return;
+  currentQ++;
+  if(currentQ>=QUESTIONS.length){ showResults(); return; }
+  renderQ();
+}
+
+/* ═══════════════════════════════════════════════════
+   CALCULAR Y MOSTRAR RESULTADOS
+   ═══════════════════════════════════════════════════ */
+function showResults(){
+  const scores={}, levels={};
+  let total=0;
+  Object.keys(MODULE_IDS).forEach(m=>{
+    const s=scoreModule(MODULE_IDS[m]); scores[m]=s; levels[m]=levelFromScore(s); total+=s;
+  });
+  const gl=levelFromScore(total/Object.keys(MODULE_IDS).length);
+
+  $('result-top').innerHTML=`
+    <div class="result-header">
+      <div class="level-badge badge-${gl.key}">${gl.label}</div>
+      <div class="result-name">${studentName}</div>
+      <div class="result-desc">Nivel general: <strong>${gl.label}</strong>. Revisa el detalle por módulo y tus recomendaciones.</div>
+    </div>`;
+
+  const mg=$('modules-grid'); mg.innerHTML='';
+  Object.keys(MODULE_IDS).forEach(m=>{
+    const lv=levels[m];
+    mg.innerHTML+=`<div class="mod-card">
+      <div class="mod-name">${m}</div>
+      <div class="mod-level lv-${lv.key}">${lv.label}</div>
+      <div class="bar-outer"><div class="bar-inner bar-${lv.key}" style="width:${lv.pct}%"></div></div>
+    </div>`;
+  });
+
+  const rl=$('recs-list'); rl.innerHTML='';
+  const icons={'Correo electrónico':'📧','Nube y almacenamiento':'☁️','Word (procesador de texto)':'📝','PowerPoint (presentaciones)':'📊','Excel (hoja de cálculo)':'📈','Inteligencia Artificial (IA)':'🤖'};
+  Object.keys(MODULE_IDS).forEach(m=>{
+    const lv=levels[m];
+    rl.innerHTML+=`<div class="rec-item">
+      <span class="rec-icon">${icons[m]}</span>
+      <div class="rec-body"><strong>${m} — ${lv.label}</strong>${RECS[m][lv.label]}</div>
+    </div>`;
+  });
+
+  // Reporte texto
+  const now=new Date();
+  const fecha=now.toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'});
+  let r='REPORTE DE DIAGNÓSTICO — HERRAMIENTAS OFIMÁTICAS ADMINISTRATIVAS\n'+'='.repeat(58)+'\n';
+  r+=`Estudiante    : ${studentName}\nCorreo        : ${studentEmail}\nFecha         : ${fecha}\nNivel general : ${gl.label}\n`+'-'.repeat(58)+'\n';
+  r+='RESULTADOS POR MÓDULO\n';
+  Object.keys(MODULE_IDS).forEach(m=>{ r+=`  • ${m.padEnd(35)} ${levels[m].label}\n`; });
+  r+='-'.repeat(58)+'\nRECOMENDACIONES POR MÓDULO\n';
+  Object.keys(MODULE_IDS).forEach(m=>{ r+=`\n[${m} — ${levels[m].label}]\n${RECS[m][levels[m].label]}\n`; });
+  r+='\n'+'='.repeat(58)+'\nDiagnóstico generado automáticamente.';
+  reportText=r;
+  $('report-pre').textContent=r;
+
+  // Guardar datos para Forms
+  window._data={ nombre:studentName, correoEstudiante:studentEmail, nivelGlobal:gl.label, fecha:fecha, reporte:r };
+  showScreen('screen-result');
+}
+
+/* ═══════════════════════════════════════════════════
+   ABRIR FORMS PRE-LLENADO
+   ═══════════════════════════════════════════════════ */
+function abrirForms(){
+  const d = window._data;
+  // Construir URL con parámetros pre-llenados
+  // Microsoft Forms acepta ?r= con JSON en base64 para pre-llenar
+  // Usamos el método de prefill query string estándar de Forms
+  const params = new URLSearchParams({
+    r: JSON.stringify({
+      nome:             d.nombre,
+      correoEstudiante: d.correoEstudiante,
+      nivelGlobal:      d.nivelGlobal,
+      fecha:            d.fecha,
+      reporte:          d.reporte
+    })
+  });
+  // URL con pre-llenado embebido como fragmento (método compatible con Forms)
+  const url = FORMS_BASE_URL + '?' + params.toString();
+  window.open(url, '_blank');
+  // Mostrar confirmación
+  const s=$('status-enviado');
+  s.classList.add('show');
+  $('btn-abrir-forms').textContent='✓ Formulario abierto — abre la pestaña y haz clic en Enviar';
+  $('btn-abrir-forms').disabled=true;
+}
+
+/* ═══════════════════════════════════════════════════
+   COPIAR Y REINICIAR
+   ═══════════════════════════════════════════════════ */
+function copyReport(){
+  if(navigator.clipboard && reportText){
+    navigator.clipboard.writeText(reportText).then(()=>{
+      const btn=document.querySelector('.btn.outline');
+      const orig=btn.textContent; btn.textContent='✓ Copiado';
+      setTimeout(()=>{ btn.textContent=orig; },2500);
+    });
+  }
+}
+function restart(){ showScreen('screen-intro'); $('inp-name').value=''; $('inp-email').value=''; }
+</script>
+</body>
+</html>
